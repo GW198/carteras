@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Excel - Compromisos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #764ba2;
+        }
+
+        .upload-area.drag-over {
+            background: #e7f3ff;
+            border-color: #667eea;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .config-item select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .results {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .stats {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📊 Procesador de Compromisos</h1>
+                <p>Extrae automáticamente registros con "COMPROMISO DE ABONO" o "COMPROMISO DE PAGO TOTAL"</p>
+            </div>
+            
+            <div class="content">
+                <!-- Área de carga -->
+                <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <h3>Haz clic o arrastra tu archivo Excel</h3>
+                    <p>Formatos soportados: .xlsx, .xls</p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+                </div>
+
+                <!-- Configuración de columnas -->
+                <div id="configSection" class="config-section" style="display:none;">
+                    <h3>⚙️ Configuración de columnas</h3>
+                    <p>Selecciona qué columna corresponde a cada campo:</p>
+                    <div id="columnMapping" class="config-grid"></div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn" onclick="procesarArchivo()">Procesar Archivo</button>
+                        <button class="btn btn-secondary" onclick="resetearConfiguracion()">Cancelar</button>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Procesando archivo...</p>
+                </div>
+
+                <!-- Resultados -->
+                <div id="results" style="display:none;">
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalRegistros">0</div>
+                            <div class="stat-label">Total registros</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="registrosFiltrados">0</div>
+                            <div class="stat-label">Registros con compromiso</div>
+                        </div>
+                        <div class="stat-item">
+                            <button class="btn" onclick="exportarExcel()">📥 Exportar a Excel</button>
+                            <button class="btn btn-secondary" onclick="nuevoArchivo()">🔄 Nuevo archivo</button>
+                        </div>
+                    </div>
+                    <div class="results" id="tablaResultados"></div>
+                </div>
+
+                <div id="mensaje"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let datosOriginales = null;
+        let datosFiltrados = null;
+        let configuracionColumnas = {};
+
+        // Área de drag & drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) leerArchivo(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) leerArchivo(e.target.files[0]);
+        });
+
+        function leerArchivo(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                mostrarMensaje('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)', 'error');
+                return;
+            }
+
+            mostrarMensaje('Leyendo archivo...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const primeraHoja = workbook.Sheets[workbook.SheetNames[0]];
+                datosOriginales = XLSX.utils.sheet_to_json(primeraHoja);
+                
+                if (datosOriginales.length === 0) {
+                    mostrarMensaje('El archivo está vacío', 'error');
+                    return;
+                }
+                
+                mostrarConfiguracionColumnas();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function mostrarConfiguracionColumnas() {
+            const columnas = Object.keys(datosOriginales[0]);
+            const configDiv = document.getElementById('columnMapping');
+            
+            const campos = [
+                { id: 'identificacion', label: 'Identificación', required: true },
+                { id: 'nombre', label: 'Nombre', required: true },
+                { id: 'telefono', label: 'Teléfono contacto', required: true },
+                { id: 'fecha', label: 'Fecha compromiso', required: true },
+                { id: 'monto', label: 'Monto compromiso', required: true },
+                { id: 'tipificacion', label: 'Tipificación', required: true },
+                { id: 'gestion', label: 'Fecha_gestion', required: true }
+            ];
+            
+            configDiv.innerHTML = campos.map(campo => `
+                <div class="config-item">
+                    <label>${campo.label} ${campo.required ? '*' : ''}</label>
+                    <select id="${campo.id}">
+                        <option value="">-- Seleccionar columna --</option>
+                        ${columnas.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select>
+                </div>
+            `).join('');
+            
+            // Intentar detectar automáticamente columnas comunes
+            detectarColumnasAutomaticamente(columnas);
+            
+            document.getElementById('configSection').style.display = 'block';
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('mensaje').innerHTML = '';
+        }
+
+        function detectarColumnasAutomaticamente(columnas) {
+            const patrones = {
+                identificacion: /(identificacion|id|cedula|documento|rut|nit|dni)/i,
+                nombre: /(nombre|cliente|razon|nombre_cliente|nombrecompleto)/i,
+                telefono: /(telefono|celular|contacto|movil|phone)/i,
+                fecha: /(fecha_compromiso|fecha|fecha_pago|fecha_abono)/i,
+                monto: /(monto_compromiso|monto|valor|importe|cantidad)/i,
+                tipificacion: /(tipificacion|tipo|estado|gestion|tipogestion)/i,
+                gestion: /(Fecha_gestion|gestion|fecha|gestion|tipogestion)/i
+            };
+            
+            for (const [campo, patron] of Object.entries(patrones)) {
+                const columnaEncontrada = columnas.find(col => patron.test(col));
+                if (columnaEncontrada) {
+                    const select = document.getElementById(campo);
+                    if (select) select.value = columnaEncontrada;
+                }
+            }
+        }
+
+        function procesarArchivo() {
+            // Validar que se hayan seleccionado todas las columnas
+            const campos = ['identificacion', 'nombre', 'telefono', 'fecha', 'monto', 'tipificacion', 'gestion'];
+            configuracionColumnas = {};
+            
+            for (const campo of campos) {
+                const select = document.getElementById(campo);
+                if (!select.value) {
+                    mostrarMensaje(`Por favor, selecciona la columna para "${campo}"`, 'error');
+                    return;
+                }
+                configuracionColumnas[campo] = select.value;
+            }
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('configSection').style.display = 'none';
+            
+            setTimeout(() => {
+                try {
+                    // Filtrar datos
+                    datosFiltrados = datosOriginales.filter(row => {
+                        const tipificacion = String(row[configuracionColumnas.tipificacion] || '').toUpperCase().trim();
+                        return tipificacion === 'COMPROMISO DE ABONO' || tipificacion === 'COMPROMISO DE PAGO TOTAL';
+                    });
+                    
+                    // Transformar datos al formato requerido
+                    datosFiltrados = datosFiltrados.map(row => ({
+                        'Identificacion': row[configuracionColumnas.identificacion] || '',
+                        'Nombre': row[configuracionColumnas.nombre] || '',
+                        'Telefono_contacto': row[configuracionColumnas.telefono] || '',
+                        'Fecha_compromiso': row[configuracionColumnas.fecha] || '',
+                        'Monto_compromiso': row[configuracionColumnas.monto] || '',
+                        'Fecha_gestion': row[configuracionColumnas.gestion] || ''
+                    }));
+                    
+                    // Mostrar resultados
+                    mostrarResultados();
+                    
+                } catch (error) {
+                    mostrarMensaje(`Error al procesar: ${error.message}`, 'error');
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }, 100);
+        }
+        
+        function mostrarResultados() {
+            document.getElementById('loading').style.display = 'none';
+            
+            // Actualizar estadísticas
+            document.getElementById('totalRegistros').textContent = datosOriginales.length;
+            document.getElementById('registrosFiltrados').textContent = datosFiltrados.length;
+            
+            // Crear tabla HTML
+            if (datosFiltrados.length === 0) {
+                document.getElementById('tablaResultados').innerHTML = '<div class="alert alert-info">No se encontraron registros con COMPROMISO DE ABONO o COMPROMISO DE PAGO TOTAL</div>';
+            } else {
+                let tablaHtml = '<table><thead><tr>';
+                const columnas = Object.keys(datosFiltrados[0]);
+                columnas.forEach(col => {
+                    tablaHtml += `<th>${col}</th>`;
+                });
+                tablaHtml += '</tr></thead><tbody>';
+                
+                datosFiltrados.forEach(row => {
+                    tablaHtml += '<tr>';
+                    columnas.forEach(col => {
+                        tablaHtml += `<td>${row[col] || ''}</td>`;
+                    });
+                    tablaHtml += '</tr>';
+                });
+                tablaHtml += '</tbody></table>';
+                
+                document.getElementById('tablaResultados').innerHTML = tablaHtml;
+            }
+            
+            document.getElementById('results').style.display = 'block';
+            mostrarMensaje(`✅ Procesamiento completado. Se encontraron ${datosFiltrados.length} registros con compromiso.`, 'success');
+        }
+        
+        function exportarExcel() {
+            if (!datosFiltrados || datosFiltrados.length === 0) {
+                mostrarMensaje('No hay datos para exportar', 'error');
+                return;
+            }
+            
+            // Convertir a hoja de cálculo
+            const ws = XLSX.utils.json_to_sheet(datosFiltrados);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Compromisos');
+            
+            // Generar y descargar archivo
+            const fecha = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+            XLSX.writeFile(wb, `compromisos_filtrados_${fecha}.xlsx`);
+            
+            mostrarMensaje('Archivo exportado exitosamente', 'success');
+        }
+        
+        function nuevoArchivo() {
+            // Resetear todo
+            datosOriginales = null;
+            datosFiltrados = null;
+            configuracionColumnas = {};
+            
+            document.getElementById('uploadArea').style.display = 'block';
+            document.getElementById('configSection').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('mensaje').innerHTML = '';
+        }
+        
+        function resetearConfiguracion() {
+            nuevoArchivo();
+        }
+        
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeDiv = document.getElementById('mensaje');
+            mensajeDiv.innerHTML = `<div class="alert alert-${tipo}">${mensaje}</div>`;
+            setTimeout(() => {
+                if (mensajeDiv.innerHTML.includes(mensaje)) {
+                    mensajeDiv.innerHTML = '';
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
