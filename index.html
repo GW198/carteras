@@ -433,7 +433,7 @@
                     // Filtrar datos
                     datosFiltrados = datosOriginales.filter(row => {
                         const tipificacion = String(row[configuracionColumnas.tipificacion] || '').toUpperCase().trim();
-                        return tipificacion === 'COMPROMISO DE ABONO' || tipificacion === 'COMPROMISO DE PAGO TOTAL';
+                        return tipificacion === 'COMPROMISO DE ABONO' || tipificacion === 'COMPROMISO DE PAGO TOTAL'|| tipificacion === 'CONVENIO DE PAGO';
                     });
                     
                     // Transformar datos al formato requerido
