@@ -503,7 +503,7 @@
             
             // Generar y descargar archivo
             const fecha = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-            XLSX.writeFile(wb, `compromisos_filtrados_${fecha}.xlsx`);
+            XLSX.writeFile(wb, `Incumplidos_${fecha}.xlsx`);
             
             mostrarMensaje('Archivo exportado exitosamente', 'success');
         }
